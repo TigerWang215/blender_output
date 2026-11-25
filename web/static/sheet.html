@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实验记录表 — {{TITLE}}</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <a href="/" class="crumb">布局列表</a><span class="crumb">›</span>
+  <a id="back" class="crumb">{{TITLE}}</a><span class="crumb">›</span>
+  <h1>实验记录表</h1>
+</header>
+<main>
+  <form class="card no-print sheet-opts" id="opts" style="margin-bottom:12px">
+    <div class="form-row"><b style="margin-right:8px">测量点</b> {{BOXES}}
+      <button type="button" id="all">全选</button><button type="button" id="none">取消全选</button></div>
+    <div class="form-row">
+      <label><input type="checkbox" id="log"{{LOG}}> 包含功率日志</label>
+      <label>最近 <input type="number" id="history" min="1" max="100" value="{{HISTORY}}" style="width:4em"> 条读数</label>
+      <label><input type="checkbox" id="pic"{{PIC}}> 附上布局图</label>
+      <button type="submit">更新</button>
+    </div>
+    <div class="form-row">
+      <button type="button" class="primary" id="copy">复制到 OneNote 或 Excel</button>
+      <button type="button" id="print">打印…</button>
+      <span class="muted" id="msg" style="font-size:13px">默认勾选桌面程序中
+        已保存到实验记录表的测量点。</span>
+    </div>
+  </form>
+  <div id="sheet">{{SHEET}}</div>
+</main>
+<script>
+const [, , fi, name] = location.pathname.split("/");
+document.getElementById("back").href = `/layout/${fi}/${name}`;
+const boxes = () => [...document.querySelectorAll("input[name=pt]")];
+document.getElementById("all").onclick = () => boxes().forEach(b => b.checked = true);
+document.getElementById("none").onclick = () => boxes().forEach(b => b.checked = false);
+document.getElementById("opts").addEventListener("submit", e => {
+  e.preventDefault();
+  const q = new URLSearchParams({points: boxes().filter(b => b.checked).map(b => b.value).join(","),
+    log: document.getElementById("log").checked ? 1 : 0, history: document.getElementById("history").value,
+    pic: document.getElementById("pic").checked ? 1 : 0});
+  location.search = q.toString();
+});
+document.getElementById("print").onclick = () => print();
+document.getElementById("copy").onclick = () => {
+  // a selection copy keeps the formatting and the picture, and works without https
+  const sel = getSelection(), range = document.createRange();
+  range.selectNodeContents(document.getElementById("sheet"));
+  sel.removeAllRanges(); sel.addRange(range);
+  const ok = document.execCommand("copy");
+  sel.removeAllRanges();
+  document.getElementById("msg").textContent = ok ? "已复制，可粘贴到 OneNote 或 Excel (Ctrl+V)。"
+    : "无法自动复制。请选择记录表后按 Ctrl+C。";
+};
+</script>
+</body>
+</html>
